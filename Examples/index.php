@@ -1,6 +1,10 @@
 <?php
 /**
- * Start the PHP development server from root with the command: php -S localhost:80 -t Examples/
+ * This script is a complete standalone (does not use other scripts) example of working with
+ * OAuth authentication and API calls, for the banking API of Česká spořitelna (Erste Group).
+ *
+ * To run locally start the PHP development server from project's root with the command:
+ * php -S localhost:8100 -t Examples/
  */
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -62,17 +66,17 @@ class Storage
 const AccessTokenKey = 'accessToken';
 const RefreshTokenKey = 'refreshToken';
 define('RootDir', dirname(__DIR__));
-Ease\Shared::init([], RootDir . '/.env');
+Ease\Shared::init([], RootDir . '/example.index.env');
 // global instance for token storage
-$storage = new Storage(new SplFileInfo(RootDir . '/.storage'));
+$storage = new Storage(new SplFileInfo(__DIR__ . '/.storage'));
 
 // Checks config ******************************************************************************************************
 if (empty(Ease\Shared::cfg('API_KEY'))) throw new RuntimeException('Missing API_KEY');
 if (empty(Ease\Shared::cfg('CLIENT_ID'))) throw new RuntimeException('Missing CLIENT_ID');
 if (empty(Ease\Shared::cfg('CLIENT_SECRET'))) throw new RuntimeException('Missing CLIENT_SECRET');
 if (empty(Ease\Shared::cfg('REDIRECT_URI'))) throw new RuntimeException('Missing REDIRECT_URI');
-// for this example must be REDIRECT_URI=http://localhost/redirectedFromBank, don't forget changed in Erste Group system
-if (Ease\Shared::cfg('REDIRECT_URI') !== 'http://localhost/redirectedFromBank') throw new RuntimeException('Invalid REDIRECT_URI for this example');
+// for this example must be REDIRECT_URI=http://localhost:8100/redirectedFromBank, don't forget changed in Erste Group system
+if (Ease\Shared::cfg('REDIRECT_URI') !== 'http://localhost:8100/redirectedFromBank') throw new RuntimeException('Invalid REDIRECT_URI for this example');
 
 // Sandbox URLs *******************************************************************************************************
 const CsasSandboxUrl = 'https://webapi.developers.erstegroup.com/api/csas';
@@ -196,7 +200,7 @@ function saveAccessToken(string $token, int $secondsExpiration): void
   global $storage;
 
   if (empty($token)) throw new InvalidArgumentException('Access token cannot be empty');
-  if ($token <= 0) throw new InvalidArgumentException("Seconds of expiration must be greater than 0, given {$secondsExpiration}");
+  if ($secondsExpiration <= 0) throw new InvalidArgumentException("Seconds of expiration must be greater than 0, given {$secondsExpiration}");
 
   $storage->write(AccessTokenKey, [$token, new DateTimeImmutable("+{$secondsExpiration} seconds")]);
 }
@@ -307,6 +311,8 @@ function handleRedirectFromBank(): void
 
   // check URL params
   if (!array_key_exists('code', $_GET)) throw new Exception('Missing authorization code in URL');
+  writeLabel('GET');
+  writeOutput($_GET);
 
   $data = [
     'client_id' => Ease\Shared::cfg('CLIENT_ID'),
@@ -317,6 +323,8 @@ function handleRedirectFromBank(): void
   ];
 
   $response = sendRequest('POST', CsasOAuthUrl . '/token', $data);
+  writeLabel('Response');
+  writeOutput($response);
 
   if (!array_key_exists('refresh_token', $response)) throw new ResponseException('Missing refresh token in response from bank', 404, $response);
   if (!array_key_exists('access_token', $response)) throw new ResponseException('Missing access token in response from bank', 404, $response);
