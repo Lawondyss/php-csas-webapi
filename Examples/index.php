@@ -66,16 +66,17 @@ class Storage
 const AccessTokenKey = 'accessToken';
 const RefreshTokenKey = 'refreshToken';
 define('RootDir', dirname(__DIR__));
-Ease\Shared::init([], RootDir . '/example.index.env');
+// load ENV keys
+Ease\Shared::init([], createPath(RootDir, 'example.index.env'));
 // global instance for token storage
-$storage = new Storage(new SplFileInfo(__DIR__ . '/.storage'));
+$storage = new Storage(new SplFileInfo(createPath(__DIR__, '.storage')));
 
 // Checks config ******************************************************************************************************
 if (empty(Ease\Shared::cfg('API_KEY'))) throw new RuntimeException('Missing API_KEY');
 if (empty(Ease\Shared::cfg('CLIENT_ID'))) throw new RuntimeException('Missing CLIENT_ID');
 if (empty(Ease\Shared::cfg('CLIENT_SECRET'))) throw new RuntimeException('Missing CLIENT_SECRET');
 if (empty(Ease\Shared::cfg('REDIRECT_URI'))) throw new RuntimeException('Missing REDIRECT_URI');
-// for this example must be REDIRECT_URI=http://localhost:8100/redirectedFromBank, don't forget changed in Erste Group system
+// for this example must be REDIRECT_URI=http://localhost:8100/redirectedFromBank, don't forget changed in Erste Group system for our sandbox
 if (Ease\Shared::cfg('REDIRECT_URI') !== 'http://localhost:8100/redirectedFromBank') throw new RuntimeException('Invalid REDIRECT_URI for this example');
 
 // Sandbox URLs *******************************************************************************************************
@@ -85,6 +86,15 @@ const CsasAccountsUrl = CsasSandboxUrl . '/public/sandbox/v3/accounts';
 
 
 // Utilities **********************************************************************************************************
+
+/**
+ * Creates filesystem path from parts dependent on OS
+ *
+ * @param non-empty-string[] $pathParts
+ */
+function createPath(string ...$pathParts): string {
+  return implode(DIRECTORY_SEPARATOR, $pathParts);
+}
 
 /**
  * Just for fancy
